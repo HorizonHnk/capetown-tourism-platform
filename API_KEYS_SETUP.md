@@ -18,8 +18,6 @@ Your app needs **3 main API keys**:
 
 **Current Status:** ✅ Working (using `gemini-2.0-flash` model)
 
-**Your current key:** `AIzaSyBflXaGZEruJEoYkSkS-ZjSA3BRzCuxrnE`
-
 **Where to manage:**
 - Visit: https://aistudio.google.com/apikey
 - Sign in with your Google account
@@ -134,28 +132,30 @@ VITE_OPENWEATHER_API_KEY=your_actual_openweather_api_key
 
 ---
 
-## 🔧 Your Current .env File
+## 🔧 Example .env File Configuration
 
-Here's what your `.env` file looks like now:
+Here's what your `.env` file should look like:
 
 ```env
 # Firebase Configuration
-VITE_FIREBASE_API_KEY=AIzaSyBP3V9JAKRfYskgVUb36JQgWq0rZ3cu8SA
-VITE_FIREBASE_AUTH_DOMAIN=tourism-c8efd.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=tourism-c8efd
-VITE_FIREBASE_STORAGE_BUCKET=tourism-c8efd.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=9510497339
-VITE_FIREBASE_APP_ID=1:9510497339:web:a8c23f7d4e6b9a1c
+VITE_FIREBASE_API_KEY=your_firebase_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 
 # Google Gemini AI
-VITE_GEMINI_API_KEY=AIzaSyBflXaGZEruJEoYkSkS-ZjSA3BRzCuxrnE
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
 
 # Google Maps - UPDATE THIS!
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyBflXaGZEruJEoYkSkS-ZjSA3BRzCuxrnE  # ⚠️ Needs billing!
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 # OpenWeather - OPTIONAL
-VITE_OPENWEATHER_API_KEY=  # Add your key here (optional)
+VITE_OPENWEATHER_API_KEY=your_openweather_api_key_here
 ```
+
+**⚠️ SECURITY WARNING:** Never commit your actual API keys to Git! Always use the `.env` file (which is in `.gitignore`).
 
 ---
 
