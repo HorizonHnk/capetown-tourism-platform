@@ -5,22 +5,62 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 // System context for Cape Town tourism
-const TOURISM_CONTEXT = `You are a knowledgeable and friendly Cape Town tourism expert assistant.
-Your goal is to help tourists plan their perfect Cape Town experience.
-Provide personalized recommendations based on their preferences, budget, travel dates, and interests.
-Be concise, helpful, and enthusiastic about Cape Town's attractions, culture, and experiences.
-Always provide practical information like addresses, operating hours, and estimated costs when relevant.
-Focus on creating memorable experiences while ensuring safety and enjoyment.`;
+const TOURISM_CONTEXT = `You are a friendly Cape Town tourism expert assistant.
+
+STRICT FORMATTING & LENGTH RULES:
+1. MAXIMUM 5 LINES total per response (including blank lines)
+2. Use **bold** for important words and place names
+3. Use bullet points (•) for lists - ONE short line per item
+4. Add ONE blank line between sections
+5. NO long paragraphs - ONLY short, punchy sentences
+6. End with a brief follow-up question (optional)
+
+RESPONSE LENGTH LIMITS:
+- Greetings: 1 sentence only
+- Simple questions: 2-3 bullet points MAX
+- Complex questions: Short intro (5 words) + 3-4 bullets MAX
+- NEVER exceed 5 total lines
+
+FORMATTING EXAMPLES:
+
+User: "hi"
+Response: "Hi! 👋 I'm your **Cape Town** travel assistant. What can I help you with?"
+
+User: "best beaches?"
+Response: "Top beaches:
+
+• **Camps Bay** - Mountain views, trendy
+• **Clifton 4th** - Calm, crystal water
+• **Muizenberg** - Surfing, colorful huts"
+
+User: "best time to visit?"
+Response: "**Best time**: Oct-Mar (summer)
+
+• Warm 20-28°C, beaches open
+• Apr-May cheaper, fewer crowds
+
+When are you visiting?"
+
+User: "what to do in cape town?"
+Response: "Must-do activities:
+
+• **Table Mountain** cable car
+• **V&A Waterfront** shopping
+• **Wine tasting** in Constantia
+
+What interests you most?"
+
+CRITICAL: Keep every response SHORT, SCANNABLE, and under 5 lines total!`;
 
 // Get the Gemini Pro model for text generation
 export const getTextModel = () => {
   return genAI.getGenerativeModel({
-    model: "gemini-pro",
+    model: "gemini-2.0-flash",
     generationConfig: {
       temperature: 0.7,
       topK: 40,
       topP: 0.95,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 150, // Very short responses - max 5 lines
     }
   });
 };
@@ -28,7 +68,7 @@ export const getTextModel = () => {
 // Get the Gemini Pro Vision model for image analysis
 export const getVisionModel = () => {
   return genAI.getGenerativeModel({
-    model: "gemini-pro-vision",
+    model: "gemini-2.0-flash",
     generationConfig: {
       temperature: 0.4,
       topK: 32,
@@ -43,15 +83,22 @@ export const generateChatResponse = async (userMessage, conversationHistory = []
   try {
     const model = getTextModel();
 
-    // Build conversation context
-    const context = `${TOURISM_CONTEXT}\n\nConversation History:\n${conversationHistory.join('\n')}\n\nUser: ${userMessage}\n\nAssistant:`;
+    // Build conversation context (optimized to reduce token usage)
+    let context = TOURISM_CONTEXT;
+
+    if (conversationHistory.length > 0) {
+      context += `\n\nConversation History:\n${conversationHistory.join('\n')}`;
+    }
+
+    context += `\n\nUser: ${userMessage}\n\nAssistant:`;
 
     const result = await model.generateContent(context);
     const response = await result.response;
     return response.text();
   } catch (error) {
     console.error('Error generating chat response:', error);
-    throw new Error('Failed to generate response. Please try again.');
+    // Preserve the original error for better error handling upstream
+    throw error;
   }
 };
 

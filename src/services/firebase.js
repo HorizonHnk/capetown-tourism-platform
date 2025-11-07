@@ -22,6 +22,17 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+
+// Only initialize analytics if running in production or if explicitly configured
+let analytics = null;
+try {
+  if (typeof window !== 'undefined' && import.meta.env.PROD) {
+    analytics = getAnalytics(app);
+  }
+} catch (error) {
+  console.warn('Analytics initialization skipped:', error.message);
+}
+
+export { analytics };
 
 export default app;
