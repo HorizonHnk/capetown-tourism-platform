@@ -261,6 +261,694 @@ capetown-tourism-platform/
 
 ---
 
+## 💻 Code Architecture & Implementation
+
+### Architecture Overview
+
+The application follows a **component-based architecture** with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   React Application                 │
+├─────────────────────────────────────────────────────┤
+│  Layout (Header + Content + Footer)                │
+├──────────────┬──────────────────────────────────────┤
+│   Routing    │  Pages (15+ routes)                  │
+├──────────────┼──────────────────────────────────────┤
+│   Context    │  - Auth Context (User state)         │
+│   Providers  │  - Favorites Context (Local state)   │
+├──────────────┼──────────────────────────────────────┤
+│   Services   │  - Firebase (Auth + Firestore)       │
+│   Layer      │  - Gemini AI (Chat + Itinerary)      │
+│              │  - Weather API (OpenWeatherMap)      │
+│              │  - PDF Export (jsPDF)                │
+└──────────────┴──────────────────────────────────────┘
+```
+
+### Design Patterns Used
+
+1. **Context API Pattern** - Global state management for authentication and favorites
+2. **Service Layer Pattern** - Abstraction for external API calls
+3. **Component Composition** - Reusable UI components
+4. **Protected Routes** - Authentication-based route access
+5. **Fallback Strategy** - Firestore with localStorage fallback
+
+---
+
+## 🔧 Core Components Breakdown
+
+### 1. Authentication System
+
+**File:** `src/context/AuthContext.jsx`
+
+```javascript
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Listen to Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  const login = (email, password) =>
+    signInWithEmailAndPassword(auth, email, password);
+
+  const signup = (email, password) =>
+    createUserWithEmailAndPassword(auth, email, password);
+
+  const logout = () => signOut(auth);
+
+  return (
+    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+**Features:**
+- Persistent auth state with Firebase
+- Auto-login on page refresh
+- Protected route enforcement
+- User session management
+
+---
+
+### 2. Firestore Database Integration
+
+**File:** `src/services/firebase.js`
+
+```javascript
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+```
+
+**Security Rules (Firestore):**
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() &&
+                     isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+                       isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() &&
+                               isOwner(resource.data.userId);
+    }
+
+    match /itineraries/{itineraryId} {
+      allow read: if isAuthenticated() &&
+                     isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+                       isOwner(request.resource.data.userId);
+      allow update, delete: if isAuthenticated() &&
+                               isOwner(resource.data.userId);
+    }
+  }
+}
+```
+
+---
+
+### 3. AI Integration with Google Gemini
+
+**File:** `src/services/geminiAI.js`
+
+```javascript
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+
+export const generateChatResponse = async (userMessage) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const chat = model.startChat({
+      history: [],
+      generationConfig: {
+        maxOutputTokens: 1000,
+      },
+    });
+
+    const result = await chat.sendMessage(userMessage);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error('Gemini AI Error:', error);
+    throw error;
+  }
+};
+
+export const generateItinerary = async (days, budget, interests) => {
+  const prompt = `Create a ${days}-day Cape Town itinerary for a ${budget}
+  budget. Focus on: ${interests.join(', ')}. Include specific attractions,
+  estimated costs, and time allocations.`;
+
+  return await generateChatResponse(prompt);
+};
+```
+
+**AI Features:**
+- Context-aware travel recommendations
+- Budget-optimized itinerary generation
+- Weather-based activity suggestions
+- Real-time chat assistance
+
+---
+
+### 4. Booking System Implementation
+
+**File:** `src/pages/Accommodation.jsx`
+
+```javascript
+const handleBooking = async () => {
+  if (!user) {
+    navigate('/login', { state: { from: '/accommodation' } });
+    return;
+  }
+
+  setBookingInProgress(true);
+
+  try {
+    const bookingData = {
+      accommodationId: selectedAccommodation.id,
+      accommodationName: selectedAccommodation.name,
+      checkIn: bookingDetails.checkIn,
+      checkOut: bookingDetails.checkOut,
+      guests: bookingDetails.guests,
+      totalCost: calculateTotalCost(),
+      userId: user.uid,
+      userEmail: user.email,
+      status: 'confirmed',
+      createdAt: serverTimestamp(),
+    };
+
+    // Save to Firestore
+    const docRef = await addDoc(collection(db, 'bookings'), bookingData);
+    console.log('✅ Booking saved with ID:', docRef.id);
+
+    // Also save to localStorage as backup
+    const localBookings = JSON.parse(
+      localStorage.getItem(`bookings_${user.uid}`) || '[]'
+    );
+    localBookings.push({ id: docRef.id, ...bookingData });
+    localStorage.setItem(`bookings_${user.uid}`, JSON.stringify(localBookings));
+
+    setShowConfirmation(true);
+  } catch (error) {
+    console.error('❌ Booking error:', error);
+    alert('Failed to complete booking. Please try again.');
+  } finally {
+    setBookingInProgress(false);
+  }
+};
+```
+
+---
+
+### 5. Smart Itinerary Planner
+
+**File:** `src/pages/ItineraryPlanner.jsx`
+
+**Key Features:**
+- Drag-and-drop day planning
+- Multi-currency budget calculator
+- PDF export functionality
+- Firestore sync
+
+```javascript
+const [days, setDays] = useState([
+  { id: 1, date: '', activities: [] }
+]);
+const [budget, setBudget] = useState(0);
+const [currency, setCurrency] = useState('ZAR');
+
+// Add activity to specific day
+const addActivity = (dayId, activity) => {
+  setDays(days.map(day =>
+    day.id === dayId
+      ? { ...day, activities: [...day.activities, activity] }
+      : day
+  ));
+};
+
+// Save to Firestore
+const saveItinerary = async () => {
+  const itineraryData = {
+    name: itineraryName,
+    days: days,
+    budget: budget,
+    currency: currency,
+    totalDays: days.length,
+    totalActivities: days.reduce((sum, day) =>
+      sum + day.activities.length, 0
+    ),
+    userId: user.uid,
+    createdAt: serverTimestamp(),
+  };
+
+  await addDoc(collection(db, 'itineraries'), itineraryData);
+};
+
+// Export to PDF
+const exportToPDF = () => {
+  const doc = new jsPDF();
+
+  doc.setFontSize(20);
+  doc.text('Cape Town Itinerary', 20, 20);
+
+  days.forEach((day, index) => {
+    doc.setFontSize(14);
+    doc.text(`Day ${index + 1}: ${day.date}`, 20, 40 + (index * 60));
+
+    day.activities.forEach((activity, actIndex) => {
+      doc.setFontSize(10);
+      doc.text(`- ${activity.name}`, 25, 50 + (index * 60) + (actIndex * 10));
+    });
+  });
+
+  doc.save('cape-town-itinerary.pdf');
+};
+```
+
+---
+
+### 6. Weather Integration
+
+**File:** `src/services/weatherService.js`
+
+```javascript
+const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+const CAPE_TOWN_COORDS = { lat: -33.9249, lon: 18.4241 };
+
+export const getCurrentWeather = async () => {
+  try {
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${CAPE_TOWN_COORDS.lat}&lon=${CAPE_TOWN_COORDS.lon}&units=metric&appid=${WEATHER_API_KEY}`
+    );
+    const data = await response.json();
+
+    return {
+      temp: Math.round(data.main.temp),
+      feelsLike: Math.round(data.main.feels_like),
+      humidity: data.main.humidity,
+      windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+      description: data.weather[0].description,
+      sunrise: new Date(data.sys.sunrise * 1000),
+      sunset: new Date(data.sys.sunset * 1000),
+    };
+  } catch (error) {
+    console.error('Weather API Error:', error);
+    return null;
+  }
+};
+
+export const getWeatherBasedSuggestions = (weather) => {
+  if (weather.temp > 25) {
+    return {
+      message: "Perfect beach weather!",
+      activities: ['Beach day', 'Table Mountain', 'Chapman\'s Peak Drive']
+    };
+  } else if (weather.temp < 15) {
+    return {
+      message: "Indoor activities recommended",
+      activities: ['Indoor museums', 'V&A Waterfront', 'Cafe hopping']
+    };
+  } else {
+    return {
+      message: "Great day for sightseeing!",
+      activities: ['Kirstenbosch Gardens', 'Signal Hill walk', 'City sightseeing']
+    };
+  }
+};
+```
+
+---
+
+### 7. Interactive Maps with Leaflet
+
+**File:** `src/components/map/LeafletMap.jsx`
+
+```javascript
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+const LeafletMap = ({ attractions }) => {
+  const capeTownCenter = [-33.9249, 18.4241];
+
+  return (
+    <MapContainer
+      center={capeTownCenter}
+      zoom={12}
+      style={{ height: '500px', width: '100%' }}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      />
+
+      {attractions.map((attraction) => (
+        <Marker
+          key={attraction.id}
+          position={[attraction.latitude, attraction.longitude]}
+        >
+          <Popup>
+            <div className="text-center">
+              <h3 className="font-bold">{attraction.name}</h3>
+              <p>{attraction.category}</p>
+              <p className="text-sm text-gray-600">
+                {attraction.priceRange}
+              </p>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  );
+};
+```
+
+---
+
+### 8. Responsive Navigation
+
+**File:** `src/components/layout/Header.jsx`
+
+**Features:**
+- Auto-hide on scroll down, show on scroll up
+- Hamburger menu for mobile (< 1280px)
+- Favorites counter badge
+- User dropdown menu
+
+```javascript
+const Header = () => {
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY) {
+        setIsVisible(false); // Scrolling down
+      } else {
+        setIsVisible(true); // Scrolling up
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  return (
+    <header className={`sticky top-0 z-50 transition-transform duration-300 ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
+      {/* Header content */}
+    </header>
+  );
+};
+```
+
+---
+
+### 9. Favorites System
+
+**File:** `src/context/FavoritesContext.jsx`
+
+```javascript
+export const FavoritesProvider = ({ children }) => {
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    // Load from localStorage on mount
+    const saved = localStorage.getItem('favorites');
+    if (saved) {
+      setFavorites(JSON.parse(saved));
+    }
+  }, []);
+
+  const addFavorite = (attraction) => {
+    const updated = [...favorites, attraction];
+    setFavorites(updated);
+    localStorage.setItem('favorites', JSON.stringify(updated));
+  };
+
+  const removeFavorite = (attractionId) => {
+    const updated = favorites.filter(fav => fav.id !== attractionId);
+    setFavorites(updated);
+    localStorage.setItem('favorites', JSON.stringify(updated));
+  };
+
+  const isFavorite = (attractionId) => {
+    return favorites.some(fav => fav.id === attractionId);
+  };
+
+  return (
+    <FavoritesContext.Provider value={{
+      favorites,
+      favoritesCount: favorites.length,
+      addFavorite,
+      removeFavorite,
+      isFavorite
+    }}>
+      {children}
+    </FavoritesContext.Provider>
+  );
+};
+```
+
+---
+
+## 📊 Database Schema
+
+### Firestore Collections
+
+#### `bookings` Collection
+```javascript
+{
+  id: "auto-generated-id",
+  userId: "firebase-user-uid",
+  userEmail: "user@example.com",
+  accommodationId: "accommodation-123",
+  accommodationName: "Table Mountain Hotel",
+  checkIn: Timestamp,
+  checkOut: Timestamp,
+  guests: 2,
+  totalCost: 2500,
+  status: "confirmed",
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+```
+
+#### `itineraries` Collection
+```javascript
+{
+  id: "auto-generated-id",
+  name: "5-Day Cape Town Adventure",
+  userId: "firebase-user-uid",
+  userEmail: "user@example.com",
+  days: [
+    {
+      id: 1,
+      date: "2025-11-10",
+      activities: [
+        {
+          name: "Table Mountain",
+          time: "09:00",
+          duration: "3 hours",
+          cost: 350
+        }
+      ]
+    }
+  ],
+  budget: 10000,
+  currency: "ZAR",
+  totalDays: 5,
+  totalActivities: 12,
+  totalCost: 8500,
+  createdAt: Timestamp,
+  updatedAt: Timestamp,
+  lastModified: Timestamp
+}
+```
+
+#### `users` Collection
+```javascript
+{
+  uid: "firebase-user-uid",
+  email: "user@example.com",
+  displayName: "John Doe",
+  createdAt: Timestamp,
+  lastLogin: Timestamp,
+  preferences: {
+    currency: "ZAR",
+    language: "en"
+  }
+}
+```
+
+---
+
+## 🔄 Data Flow Architecture
+
+### Booking Flow
+```
+User Action (Click Book)
+    ↓
+Check Authentication
+    ↓
+Collect Booking Details
+    ↓
+Validate Input
+    ↓
+Save to Firestore (Primary)
+    ↓
+Save to localStorage (Backup)
+    ↓
+Show Confirmation
+    ↓
+Navigate to My Bookings
+```
+
+### Itinerary Flow
+```
+User Creates Itinerary
+    ↓
+Add Days & Activities
+    ↓
+Calculate Budget
+    ↓
+Save Button Click
+    ↓
+Save to Firestore with User ID
+    ↓
+Update Local State
+    ↓
+Show Success Message
+    ↓
+View in My Itineraries
+```
+
+### Authentication Flow
+```
+User Enters Credentials
+    ↓
+Firebase Authentication
+    ↓
+Auth State Change Listener
+    ↓
+Update Context State
+    ↓
+Store User Object
+    ↓
+Enable Protected Routes
+    ↓
+Load User-Specific Data
+```
+
+---
+
+## ⚡ Performance Optimizations
+
+### 1. Code Splitting
+```javascript
+// Lazy load routes for better initial load time
+const Home = lazy(() => import('./pages/Home'));
+const Attractions = lazy(() => import('./pages/Attractions'));
+const AIAssistant = lazy(() => import('./pages/AIAssistant'));
+```
+
+### 2. Image Optimization
+- Unsplash images with `w=1920&q=80` parameters
+- Lazy loading for off-screen images
+- WebP format support
+
+### 3. Memoization
+```javascript
+const memoizedValue = useMemo(() =>
+  computeExpensiveValue(a, b),
+  [a, b]
+);
+```
+
+### 4. Debounced Search
+```javascript
+const debouncedSearch = useMemo(
+  () => debounce((query) => setSearchTerm(query), 300),
+  []
+);
+```
+
+### 5. Firestore Query Optimization
+- Index-aware queries
+- Fallback to simple queries without `orderBy`
+- Client-side sorting for non-indexed queries
+
+---
+
+## 🛡️ Error Handling
+
+### Graceful Degradation
+```javascript
+try {
+  // Try Firestore first
+  const data = await fetchFromFirestore();
+} catch (firestoreError) {
+  console.warn('Firestore error, using localStorage fallback');
+  // Fallback to localStorage
+  const data = loadFromLocalStorage();
+}
+```
+
+### User-Friendly Error Messages
+```javascript
+catch (error) {
+  if (error.code === 'permission-denied') {
+    alert('You don\'t have permission to access this data.');
+  } else if (error.code === 'unavailable') {
+    alert('Service temporarily unavailable. Please try again.');
+  } else {
+    alert('An unexpected error occurred. Please try again later.');
+  }
+}
+```
+
+---
+
 ## 🚀 Available Scripts
 
 ### Development
