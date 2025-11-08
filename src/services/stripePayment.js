@@ -1,4 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from './firebase';
 
 // Initialize Stripe with your publishable key
 // This is safe to expose in frontend code
@@ -8,6 +10,9 @@ const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripeKey && stripeKey.startsWith('pk_')
   ? loadStripe(stripeKey)
   : null;
+
+// Initialize Firebase Functions
+const functions = getFunctions(app);
 
 /**
  * Create a Stripe Checkout session for booking payment
@@ -34,57 +39,52 @@ export const createCheckoutSession = async (bookingDetails, amount, currency = '
       throw new Error('Stripe failed to initialize');
     }
 
-    // For now, we'll use Stripe Checkout in test mode
-    // This creates a simple payment link without needing a backend
-
-    const checkoutOptions = {
-      lineItems: [
-        {
-          price_data: {
-            currency: currency.toLowerCase(),
-            product_data: {
-              name: bookingDetails.accommodationName || 'Cape Town Booking',
-              description: `Booking from ${bookingDetails.checkIn} to ${bookingDetails.checkOut}`,
-              images: ['https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=400'], // Table Mountain
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      successUrl: `${window.location.origin}/booking-success?booking_id=${bookingDetails.bookingId}`,
-      cancelUrl: `${window.location.origin}/booking-cancelled`,
-      customerEmail: bookingDetails.userEmail,
-      metadata: {
-        bookingId: bookingDetails.bookingId,
-        userId: bookingDetails.userId,
-        accommodationId: bookingDetails.accommodationId,
-      },
-    };
-
-    // Note: This is a simplified version for testing
-    // In production, you should create the checkout session on your backend
-    // and pass the session ID to the frontend
-
-    console.log('🚀 Stripe configured - redirecting to checkout...');
+    console.log('🚀 Creating Stripe checkout session via Firebase Function...');
     console.log('💳 Amount:', amount, currency);
-    console.log('✅ Booking saved: R' + amount.toFixed(2));
-    console.log('⚠️ Next step: Set up backend to create Stripe checkout sessions');
-    console.log('📖 See PAYMENT_INTEGRATION_GUIDE.md for details');
+    console.log('📦 Booking ID:', bookingDetails.bookingId);
 
-    // TODO: In production, create checkout session on backend
-    // Uncomment this when you have a backend:
-    // const { error } = await stripe.redirectToCheckout(checkoutOptions);
-    // if (error) {
-    //   throw error;
-    // }
+    // Call Firebase Function to create checkout session
+    const createCheckoutSessionFunction = httpsCallable(functions, 'createCheckoutSession');
 
-    return { success: true, demo: false };
+    const result = await createCheckoutSessionFunction({
+      bookingId: bookingDetails.bookingId,
+      accommodationName: bookingDetails.accommodationName,
+      amount: amount,
+      checkIn: bookingDetails.checkIn,
+      checkOut: bookingDetails.checkOut,
+      userId: bookingDetails.userId,
+      userEmail: bookingDetails.userEmail,
+      accommodationId: bookingDetails.accommodationId,
+      successUrl: `${window.location.origin}/booking-success`,
+      cancelUrl: `${window.location.origin}/booking-cancelled`,
+    });
+
+    const { sessionId, url } = result.data;
+
+    console.log('✅ Checkout session created successfully!');
+    console.log('🔗 Session ID:', sessionId);
+    console.log('🌐 Redirecting to Stripe Checkout...');
+
+    // Redirect to Stripe Checkout
+    const { error } = await stripe.redirectToCheckout({ sessionId });
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, sessionId };
 
   } catch (error) {
     console.error('❌ Stripe payment error:', error);
-    throw new Error(`Payment failed: ${error.message}`);
+
+    // Show user-friendly error message
+    if (error.code === 'functions/unauthenticated') {
+      throw new Error('Please log in to complete your booking');
+    } else if (error.code === 'functions/invalid-argument') {
+      throw new Error('Invalid booking details. Please try again.');
+    } else {
+      throw new Error(`Payment failed: ${error.message}`);
+    }
   }
 };
 
