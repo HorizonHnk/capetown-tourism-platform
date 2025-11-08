@@ -7,6 +7,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { processPayment } from '../services/stripePayment';
 
 // Sample data for hotels
 const HOTELS = [
@@ -387,22 +388,47 @@ const Accommodation = () => {
       totalPrice,
       bookedAt: new Date().toISOString(),
       userId: user.uid,
-      userEmail: user.email
+      userEmail: user.email,
+      status: 'pending_payment' // New status field
     };
 
-    setConfirmationDetails(confirmation);
-    setShowBookingModal(false);
-    setShowConfirmation(true);
-
     try {
-      // Save to Firestore
-      await addDoc(collection(db, 'bookings'), {
+      // First, save booking to Firestore with "pending_payment" status
+      const docRef = await addDoc(collection(db, 'bookings'), {
         ...confirmation,
         createdAt: serverTimestamp()
       });
-      console.log('Booking saved to Firestore successfully');
+
+      console.log('✅ Booking created with ID:', docRef.id);
+
+      // Prepare payment details
+      const paymentDetails = {
+        bookingId: docRef.id,
+        accommodationName: selectedItem.name,
+        checkIn: bookingDetails.checkIn || bookingDetails.date || 'N/A',
+        checkOut: bookingDetails.checkOut || 'N/A',
+        userId: user.uid,
+        userEmail: user.email,
+        accommodationId: selectedItem.id,
+      };
+
+      // Process payment through Stripe
+      console.log('💳 Initiating payment...');
+      await processPayment(paymentDetails, totalPrice);
+
+      // Show confirmation (payment will be completed via Stripe)
+      setConfirmationDetails({
+        ...confirmation,
+        bookingId: docRef.id
+      });
+      setShowBookingModal(false);
+      setShowConfirmation(true);
+
+      console.log('✅ Booking process initiated successfully');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      console.error('❌ Error during booking/payment:', error);
+      alert('Failed to process booking. Please try again.');
+
       // Fall back to localStorage if Firestore fails
       const savedBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
       savedBookings.push(confirmation);

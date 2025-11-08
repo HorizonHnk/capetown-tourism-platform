@@ -18,6 +18,8 @@ import MyBookings from './pages/MyBookings';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Favorites from './pages/Favorites';
+import BookingSuccess from './pages/BookingSuccess';
+import BookingCancelled from './pages/BookingCancelled';
 import './index.css';
 
 function App() {
@@ -43,6 +45,8 @@ function App() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
+          <Route path="booking-success" element={<BookingSuccess />} />
+          <Route path="booking-cancelled" element={<BookingCancelled />} />
           <Route
             path="privacy"
             element={
