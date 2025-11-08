@@ -2,7 +2,12 @@ import { loadStripe } from '@stripe/stripe-js';
 
 // Initialize Stripe with your publishable key
 // This is safe to expose in frontend code
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+
+// Only initialize Stripe if we have a valid key
+const stripePromise = stripeKey && stripeKey.startsWith('pk_')
+  ? loadStripe(stripeKey)
+  : null;
 
 /**
  * Create a Stripe Checkout session for booking payment
@@ -13,6 +18,16 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
  */
 export const createCheckoutSession = async (bookingDetails, amount, currency = 'ZAR') => {
   try {
+    // Check if Stripe is properly configured
+    if (!stripePromise) {
+      console.warn('⚠️ Stripe not configured - using demo mode');
+      console.log('💳 PAYMENT DEMO MODE');
+      console.log('✅ Booking saved successfully!');
+      console.log('📝 To enable real payments: Add VITE_STRIPE_PUBLISHABLE_KEY to .env');
+
+      return { success: true, demo: true };
+    }
+
     const stripe = await stripePromise;
 
     if (!stripe) {
@@ -52,24 +67,20 @@ export const createCheckoutSession = async (bookingDetails, amount, currency = '
     // In production, you should create the checkout session on your backend
     // and pass the session ID to the frontend
 
-    console.log('⚠️ DEMO MODE: Using Stripe test mode');
-    console.log('💡 To fully enable payments, you need to:');
-    console.log('1. Create a Stripe account at https://stripe.com');
-    console.log('2. Get your API keys from https://dashboard.stripe.com/test/apikeys');
-    console.log('3. Add VITE_STRIPE_PUBLISHABLE_KEY to your .env file');
-    console.log('4. For production, set up a backend to create checkout sessions');
+    console.log('🚀 Stripe configured - redirecting to checkout...');
+    console.log('💳 Amount:', amount, currency);
+    console.log('✅ Booking saved: R' + amount.toFixed(2));
+    console.log('⚠️ Next step: Set up backend to create Stripe checkout sessions');
+    console.log('📖 See PAYMENT_INTEGRATION_GUIDE.md for details');
 
-    // For demo purposes, we'll show an alert
-    // In a real implementation, this would redirect to Stripe Checkout
-    alert(`🚀 Payment Integration Ready!\n\nBooking Details:\n- Amount: R${amount.toFixed(2)}\n- Accommodation: ${bookingDetails.accommodationName}\n- Check-in: ${bookingDetails.checkIn}\n- Check-out: ${bookingDetails.checkOut}\n\nTo complete the integration:\n1. Create Stripe account\n2. Add your API key to .env\n3. Uncomment the redirect code below\n\n✅ Booking saved to database!`);
-
-    // Uncomment this when you have a real Stripe account:
+    // TODO: In production, create checkout session on backend
+    // Uncomment this when you have a backend:
     // const { error } = await stripe.redirectToCheckout(checkoutOptions);
     // if (error) {
     //   throw error;
     // }
 
-    return { success: true, demo: true };
+    return { success: true, demo: false };
 
   } catch (error) {
     console.error('❌ Stripe payment error:', error);

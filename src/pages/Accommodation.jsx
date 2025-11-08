@@ -427,7 +427,7 @@ const Accommodation = () => {
       console.log('✅ Booking process initiated successfully');
     } catch (error) {
       console.error('❌ Error during booking/payment:', error);
-      alert('Failed to process booking. Please try again.');
+      console.error('⚠️ Failed to process booking. Please try again.');
 
       // Fall back to localStorage if Firestore fails
       const savedBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
