@@ -1,6 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from './firebase';
+import app from './firebase';
 
 // Initialize Stripe with your publishable key
 // This is safe to expose in frontend code
