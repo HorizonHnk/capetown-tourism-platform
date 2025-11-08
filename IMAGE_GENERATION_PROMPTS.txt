@@ -1,0 +1,608 @@
+================================================================================
+                   AI IMAGE GENERATION PROMPTS
+         Cape Town Tourism Platform - Diagrams & Architecture
+================================================================================
+
+Use these prompts with AI image generators (Gemini, DALL-E, Midjourney, etc.)
+to create high-quality PNG diagrams for documentation and social media.
+
+================================================================================
+PROMPT 1: SYSTEM ARCHITECTURE DIAGRAM
+================================================================================
+
+Create a professional, high-quality system architecture diagram for a Cape Town Tourism web application. The diagram should be in PNG format, 1920x1080 resolution, with a clean modern design using a blue, teal, and white color scheme.
+
+The architecture should show:
+
+TOP LAYER (Frontend):
+- React 18+ application
+- Vite build tool
+- Tailwind CSS 4.0
+- React Router DOM v6
+- Framer Motion (animations)
+- Lucide React (icons)
+
+MIDDLE LAYER (State Management):
+- Auth Context (user authentication state)
+- Favorites Context (local state)
+- React Hooks (useState, useEffect, useContext)
+
+SERVICE LAYER:
+- Firebase Authentication
+- Cloud Firestore (database)
+- Google Gemini AI (chat assistant)
+- OpenWeatherMap API (weather data)
+- Leaflet Maps (interactive maps)
+- Formspree (contact forms)
+
+BOTTOM LAYER (Deployment):
+- Netlify (hosting)
+- GitHub (version control)
+- Firebase Hosting (alternative)
+
+Add arrows showing data flow between layers. Use icons for each technology. Make it look professional and suitable for LinkedIn/technical documentation. Include a title "Cape Town Tourism Platform - System Architecture" at the top.
+
+Style: Clean, modern, professional, tech-focused, minimalist design with clear labels and connections.
+
+================================================================================
+PROMPT 2: COMPONENT HIERARCHY DIAGRAM
+================================================================================
+
+Create a high-quality component hierarchy tree diagram in PNG format (1920x1080) showing the React component structure for a tourism web application.
+
+The hierarchy should be structured as:
+
+ROOT:
+└── App.jsx
+
+LAYOUT LEVEL:
+├── Layout
+│   ├── Header (with navigation, user menu, favorites badge)
+│   ├── Main Content (router outlet)
+│   └── Footer (contact info, social links)
+
+PAGES LEVEL (15+ pages):
+├── Home (hero carousel, features, weather widget)
+├── Attractions (map, filters, search, cards)
+├── AI Assistant (chat interface, itinerary generator)
+├── Itinerary Planner (days, activities, budget calculator)
+├── Accommodation (hotels, booking system)
+├── Restaurants (dining options, reviews)
+├── My Bookings (booking history)
+├── My Itineraries (saved plans)
+├── Favorites (saved attractions)
+├── Login (authentication)
+├── Signup (registration)
+├── Profile (user dashboard)
+├── About
+├── Contact
+└── Not Found (404)
+
+COMPONENTS:
+├── HeroCarousel (3 slides with Cape Town images)
+├── WeatherWidget (temperature, suggestions, refresh)
+├── FloatingChatWidget (AI assistant button)
+├── AttractionsMap (Leaflet integration)
+├── LeafletMap (reusable map component)
+├── AttractionCard (attraction details)
+└── BookingModal (booking form)
+
+CONTEXT PROVIDERS:
+├── AuthProvider (user authentication)
+└── FavoritesProvider (favorites management)
+
+Use tree structure with connecting lines. Color-code by type (pages in blue, components in teal, contexts in purple). Add icons for each component type. Make it suitable for technical documentation.
+
+Title: "Cape Town Tourism Platform - Component Architecture"
+
+Style: Professional, clean, hierarchical tree structure, tech diagram aesthetic.
+
+================================================================================
+PROMPT 3: DATA FLOW DIAGRAM - BOOKING SYSTEM
+================================================================================
+
+Create a professional data flow diagram in PNG format (1920x1080) showing the booking flow for the Cape Town Tourism Platform.
+
+The flow should show these steps:
+
+1. USER ACTION:
+   - User clicks "Book Now" button
+   - [Icon: cursor clicking button]
+
+2. AUTHENTICATION CHECK:
+   - Check if user is logged in
+   - [Decision diamond: "Authenticated?"]
+   - If NO → Redirect to Login page
+   - If YES → Continue to booking
+
+3. BOOKING FORM:
+   - User fills in booking details:
+     * Check-in date
+     * Check-out date
+     * Number of guests
+     * Special requests
+   - [Icon: form with fields]
+
+4. VALIDATION:
+   - Validate form inputs
+   - Calculate total cost
+   - [Icon: checkmark]
+
+5. FIREBASE SAVE:
+   - Save to Cloud Firestore
+   - Collection: "bookings"
+   - Document fields:
+     * userId
+     * accommodationId
+     * dates
+     * totalCost
+     * status: "confirmed"
+     * timestamp
+   - [Icon: database]
+
+6. BACKUP STORAGE:
+   - Save to localStorage
+   - [Icon: local storage]
+
+7. CONFIRMATION:
+   - Show success message
+   - Send confirmation details
+   - Navigate to My Bookings
+   - [Icon: success checkmark with green]
+
+8. MY BOOKINGS PAGE:
+   - Query Firestore for user bookings
+   - Display booking history
+   - [Icon: list with items]
+
+Use rectangular boxes for processes, diamond shapes for decisions, cylindrical shapes for databases, and arrows showing data flow direction. Add icons for each step. Use green for success paths, blue for normal flow, and orange for alternate paths.
+
+Title: "Booking System - Data Flow Architecture"
+
+Style: Professional flowchart, UML-style, clean and clear with labeled connections.
+
+================================================================================
+PROMPT 4: DATABASE SCHEMA DIAGRAM
+================================================================================
+
+Create a professional database schema diagram in PNG format (1920x1080) for the Cloud Firestore collections used in the Cape Town Tourism Platform.
+
+Show 3 main collections with their structure:
+
+COLLECTION 1: "bookings"
+┌─────────────────────────────┐
+│       BOOKINGS              │
+├─────────────────────────────┤
+│ id (auto-generated)         │
+│ userId (string, indexed)    │
+│ userEmail (string)          │
+│ accommodationId (string)    │
+│ accommodationName (string)  │
+│ checkIn (timestamp)         │
+│ checkOut (timestamp)        │
+│ guests (number)             │
+│ totalCost (number)          │
+│ status (string)             │
+│ createdAt (timestamp)       │
+│ updatedAt (timestamp)       │
+└─────────────────────────────┘
+
+COLLECTION 2: "itineraries"
+┌─────────────────────────────┐
+│     ITINERARIES             │
+├─────────────────────────────┤
+│ id (auto-generated)         │
+│ name (string)               │
+│ userId (string, indexed)    │
+│ userEmail (string)          │
+│ days (array)                │
+│   ├─ id (number)            │
+│   ├─ date (string)          │
+│   └─ activities (array)     │
+│ budget (number)             │
+│ currency (string)           │
+│ totalDays (number)          │
+│ totalActivities (number)    │
+│ totalCost (number)          │
+│ createdAt (timestamp)       │
+│ updatedAt (timestamp)       │
+│ lastModified (timestamp)    │
+└─────────────────────────────┘
+
+COLLECTION 3: "users"
+┌─────────────────────────────┐
+│         USERS               │
+├─────────────────────────────┤
+│ uid (Firebase Auth ID)      │
+│ email (string)              │
+│ displayName (string)        │
+│ photoURL (string)           │
+│ createdAt (timestamp)       │
+│ lastLogin (timestamp)       │
+│ preferences (object)        │
+│   ├─ currency (string)      │
+│   └─ language (string)      │
+└─────────────────────────────┘
+
+RELATIONSHIPS:
+- Draw arrows from "users.uid" to "bookings.userId"
+- Draw arrows from "users.uid" to "itineraries.userId"
+
+Add primary key icons (🔑) next to id fields.
+Add index icons (📊) next to indexed fields.
+Use database blue color scheme.
+
+Title: "Cloud Firestore - Database Schema"
+
+Style: Clean database diagram, ER-diagram style, professional with clear field types and relationships.
+
+================================================================================
+PROMPT 5: AUTHENTICATION FLOW DIAGRAM
+================================================================================
+
+Create a detailed authentication flow diagram in PNG format (1920x1080) showing the user authentication process for the Cape Town Tourism Platform.
+
+The flow should show:
+
+START:
+└─ User visits website
+
+INITIAL STATE:
+├─ AuthContext listens to Firebase Auth State
+└─ onAuthStateChanged() fires
+
+DECISION: "User Logged In?"
+├─ YES → Load user data
+│   ├─ Set user state in context
+│   ├─ Enable protected routes
+│   ├─ Load user-specific data:
+│   │   ├─ Bookings from Firestore
+│   │   ├─ Itineraries from Firestore
+│   │   └─ Favorites from localStorage
+│   └─ Show user dashboard
+│
+└─ NO → Show login/signup options
+
+LOGIN FLOW:
+1. User enters email & password
+2. Call Firebase signInWithEmailAndPassword()
+3. Firebase validates credentials
+4. If valid:
+   ├─ Generate auth token
+   ├─ Store token in browser
+   ├─ Trigger onAuthStateChanged()
+   └─ Redirect to dashboard
+5. If invalid:
+   └─ Show error message
+
+SIGNUP FLOW:
+1. User enters email, password, name
+2. Call Firebase createUserWithEmailAndPassword()
+3. Create new user account
+4. Update profile with displayName
+5. Automatically log in
+6. Redirect to onboarding
+
+LOGOUT FLOW:
+1. User clicks "Logout"
+2. Call Firebase signOut()
+3. Clear auth token
+4. Clear user state
+5. Redirect to homepage
+
+PROTECTED ROUTES:
+- Check if user exists
+- If no user → Redirect to login
+- If user → Allow access
+
+Use rounded rectangles for processes, diamonds for decisions, and different colors for different flows (green for success, blue for process, red for errors, yellow for decisions).
+
+Title: "Firebase Authentication - User Flow"
+
+Style: Professional flowchart with icons, UML activity diagram style, clear and modern.
+
+================================================================================
+PROMPT 6: AI INTEGRATION ARCHITECTURE
+================================================================================
+
+Create a technical architecture diagram in PNG format (1920x1080) showing how Google Gemini AI is integrated into the Cape Town Tourism Platform.
+
+The diagram should show:
+
+USER INTERFACE:
+├─ Chat Widget (floating button)
+├─ AI Assistant Page
+└─ Quick Itinerary Modal
+
+USER INTERACTION:
+1. User types message/request
+   - "Plan a 3-day trip to Cape Town"
+   - "What's the weather like?"
+   - "Recommend budget activities"
+
+FRONTEND PROCESSING:
+2. React Component captures input
+3. Validate and format user message
+4. Show loading state
+
+API SERVICE LAYER:
+5. Call geminiAI.js service
+   - generateChatResponse(message)
+   - generateItinerary(days, budget, interests)
+
+GOOGLE GEMINI AI:
+6. API Request:
+   ├─ Model: "gemini-2.0-flash"
+   ├─ MaxTokens: 1000
+   ├─ Temperature: 0.7
+   └─ Context: Cape Town tourism
+
+7. AI Processing:
+   ├─ Understand user intent
+   ├─ Generate relevant response
+   ├─ Format as markdown
+   └─ Include specific attractions
+
+8. API Response:
+   └─ Return generated text
+
+FRONTEND DISPLAY:
+9. Receive AI response
+10. Parse markdown
+11. Display in chat interface
+12. Add to conversation history
+
+ENHANCEMENTS:
+├─ Weather integration (context-aware)
+├─ Budget calculations
+├─ Attraction recommendations
+└─ Multi-day itinerary formatting
+
+Add Google Gemini logo, React logo, and connection arrows. Use gradient colors (purple to blue for AI, teal for frontend). Show API key flow and error handling.
+
+Title: "Google Gemini AI - Integration Architecture"
+
+Style: Modern tech diagram, gradient colors, sleek and futuristic with AI/ML aesthetic.
+
+================================================================================
+PROMPT 7: RESPONSIVE DESIGN BREAKPOINTS
+================================================================================
+
+Create a visual diagram in PNG format (1920x1080) showing the responsive design breakpoints and layout adaptations for the Cape Town Tourism Platform.
+
+Show 4 device sizes side by side:
+
+1. MOBILE (< 768px):
+   - Single column layout
+   - Hamburger menu
+   - Stacked cards
+   - Full-width images
+   - Bottom navigation
+   [Show simplified mobile wireframe]
+
+2. TABLET (768px - 1024px):
+   - Two column grid
+   - Visible but condensed nav
+   - Card grid (2 columns)
+   - Larger touch targets
+   [Show tablet wireframe]
+
+3. LAPTOP (1024px - 1280px):
+   - Three column grid
+   - Full navigation bar
+   - Card grid (3 columns)
+   - Sidebar visible
+   [Show laptop wireframe]
+
+4. DESKTOP (> 1280px):
+   - Full layout
+   - All features visible
+   - Maximum content width: 1280px
+   - Four column grid
+   - Sidebar + main content
+   [Show desktop wireframe]
+
+BREAKPOINT MARKERS:
+Show vertical lines at:
+- 768px (mobile → tablet)
+- 1024px (tablet → laptop)
+- 1280px (laptop → desktop)
+
+TAILWIND CSS CLASSES:
+- sm: 640px
+- md: 768px
+- lg: 1024px
+- xl: 1280px
+- 2xl: 1536px
+
+Add device icons (phone, tablet, laptop, desktop monitor) above each wireframe. Use blue color scheme. Include labels for key layout changes.
+
+Title: "Responsive Design - Breakpoint Strategy"
+
+Style: Clean wireframe style, professional UX/UI diagram, modern and minimalist.
+
+================================================================================
+PROMPT 8: FEATURE SHOWCASE INFOGRAPHIC
+================================================================================
+
+Create a colorful, marketing-style infographic in PNG format (1920x1080) showcasing the key features of the Cape Town Tourism Platform.
+
+Layout as a grid with icons and descriptions:
+
+TOP SECTION - HERO:
+┌─────────────────────────────────────────┐
+│  🌍 Cape Town Tourism Platform          │
+│  Built in 8 Hours • 10,000+ Lines      │
+│  Production Ready • AI-Powered          │
+└─────────────────────────────────────────┘
+
+FEATURES GRID (3x3):
+
+Row 1:
+┌─────────────┬─────────────┬─────────────┐
+│ 🤖 AI Chat  │ 🗺️ Maps     │ 📅 Planner  │
+│ Google      │ 50+ Spots   │ Multi-day   │
+│ Gemini AI   │ Interactive │ Itineraries │
+└─────────────┴─────────────┴─────────────┘
+
+Row 2:
+┌─────────────┬─────────────┬─────────────┐
+│ 🏨 Booking  │ 🌤️ Weather  │ 🔐 Secure   │
+│ Hotels &    │ Real-time   │ Firebase    │
+│ Restaurants │ Suggestions │ Auth        │
+└─────────────┴─────────────┴─────────────┘
+
+Row 3:
+┌─────────────┬─────────────┬─────────────┐
+│ 📱 Mobile   │ 💾 Save     │ 📄 Export   │
+│ Responsive  │ Favorites & │ PDF         │
+│ All Devices │ Itineraries │ Download    │
+└─────────────┴─────────────┴─────────────┘
+
+BOTTOM SECTION - STATS:
+┌─────────────────────────────────────────┐
+│ ⏱️ 8 Hours  📦 30+ Components  🚀 Live │
+│ 💻 15+ Pages  🔧 4 APIs  ⭐ Open Source│
+└─────────────────────────────────────────┘
+
+Use vibrant colors (blues, teals, purples, oranges). Add large, clear icons. Make it Instagram/social media friendly. Include website URL at bottom.
+
+Title at top: "Cape Town Tourism Platform - Features Overview"
+
+Style: Modern infographic, colorful, engaging, social media ready, professional marketing material.
+
+================================================================================
+PROMPT 9: TECH STACK VISUAL
+================================================================================
+
+Create a visually appealing tech stack diagram in PNG format (1920x1080) with official logos and icons.
+
+Arrange in 4 layers from top to bottom:
+
+LAYER 1 - FRONTEND:
+┌──────────────────────────────────────┐
+│  [React Logo] [Vite Logo]            │
+│  React 18+    Vite 5.0               │
+│                                       │
+│  [Tailwind]   [React Router]         │
+│  Tailwind CSS React Router v6        │
+│                                       │
+│  [Framer]     [Lucide]               │
+│  Framer Motion Lucide Icons          │
+└──────────────────────────────────────┘
+
+LAYER 2 - BACKEND & SERVICES:
+┌──────────────────────────────────────┐
+│  [Firebase Logo]  [Google AI Logo]   │
+│  Firebase         Gemini AI          │
+│  Auth + Firestore                    │
+│                                       │
+│  [OpenWeather]    [Leaflet]          │
+│  Weather API      Maps               │
+└──────────────────────────────────────┘
+
+LAYER 3 - DEVELOPMENT TOOLS:
+┌──────────────────────────────────────┐
+│  [Git Logo]   [npm Logo]             │
+│  Git          npm                    │
+│                                       │
+│  [ESLint]     [VS Code]              │
+│  ESLint       VS Code                │
+└──────────────────────────────────────┘
+
+LAYER 4 - DEPLOYMENT:
+┌──────────────────────────────────────┐
+│  [Netlify Logo] [GitHub Logo]        │
+│  Netlify        GitHub               │
+│  Hosting        Version Control      │
+└──────────────────────────────────────┘
+
+Use actual brand colors for each logo. Add connecting lines between layers. Include version numbers. Make it suitable for GitHub README or LinkedIn post.
+
+Title: "Cape Town Tourism Platform - Technology Stack"
+
+Style: Professional, brand-accurate logos, clean layout, tech-focused, developer-friendly.
+
+================================================================================
+PROMPT 10: PROJECT TIMELINE VISUALIZATION
+================================================================================
+
+Create a horizontal timeline infographic in PNG format (1920x1080) showing the 8-hour development journey.
+
+Timeline from 8:00 AM to 4:00 PM (November 7, 2025):
+
+8:00 AM - 9:00 AM:
+├─ 📋 Project Planning
+├─ Architecture design
+└─ Setup (Vite + React + Tailwind)
+
+9:00 AM - 10:30 AM:
+├─ 🔐 Firebase Setup
+├─ Authentication system
+└─ Firestore configuration
+
+10:30 AM - 12:00 PM:
+├─ 🏗️ Core Pages
+├─ Layout components
+├─ Routing setup
+└─ Homepage with carousel
+
+12:00 PM - 1:00 PM:
+└─ ☕ Lunch Break
+
+1:00 PM - 2:00 PM:
+├─ 🤖 AI Integration
+├─ Google Gemini setup
+└─ Chat interface
+
+2:00 PM - 3:00 PM:
+├─ 🎨 Features
+├─ Attractions database
+├─ Maps integration
+├─ Weather widget
+└─ Booking system
+
+3:00 PM - 4:00 PM:
+├─ 🚀 Final Polish
+├─ Responsive design
+├─ Testing
+├─ Build & deploy
+└─ ✅ Launch!
+
+MILESTONES (show as pins on timeline):
+📍 First commit (8:30 AM)
+📍 Authentication working (10:00 AM)
+📍 AI chat functional (1:30 PM)
+📍 All features complete (3:30 PM)
+📍 Live on Netlify (4:00 PM)
+
+Use a horizontal arrow timeline with color-coded sections. Add clock icons, emojis, and progress indicators. Show cumulative lines of code at each milestone.
+
+Title: "Built in 8 Hours - Development Timeline"
+
+Style: Modern timeline infographic, colorful, engaging, story-telling visualization.
+
+================================================================================
+END OF IMAGE GENERATION PROMPTS
+================================================================================
+
+TIPS FOR BEST RESULTS:
+1. Specify "high quality PNG, 1920x1080 resolution" in every prompt
+2. Ask for "professional, clean, modern design"
+3. Request specific color schemes (blues, teals, purples for tech)
+4. Mention "suitable for [platform]" (LinkedIn, GitHub, Instagram)
+5. If the AI doesn't support diagram generation, use tools like:
+   - Excalidraw (https://excalidraw.com/)
+   - Draw.io (https://app.diagrams.net/)
+   - Figma (https://figma.com/)
+   - Canva (https://canva.com/)
+   - Lucidchart (https://lucidchart.com/)
+
+ALTERNATIVE APPROACH:
+If the AI can't generate images directly, copy these prompts into:
+- Midjourney with "/imagine" command
+- DALL-E with direct paste
+- Stable Diffusion with detailed descriptions
+- Or use diagramming tools with the specifications provided
+
+================================================================================
