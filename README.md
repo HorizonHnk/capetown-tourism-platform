@@ -4,7 +4,7 @@
 
 ## 🌐 Live Demo
 
-**🚀 Visit the live site:** [https://capetown-tourism-platform.netlify.app/](https://capetown-tourism-platform.netlify.app/)
+**🚀 Visit the live site:** [https://capetown-tourism.netlify.app/](https://capetown-tourism.netlify.app/)
 
 ---
 
@@ -991,7 +991,7 @@ npm run lint
 
 ### 📦 Deploy to Netlify (Current)
 
-> **Live Site:** [https://capetown-tourism-platform.netlify.app/](https://capetown-tourism-platform.netlify.app/)
+> **Live Site:** [https://capetown-tourism.netlify.app/](https://capetown-tourism.netlify.app/)
 
 #### Option 1: Manual Deploy (Current Method)
 
@@ -1238,7 +1238,7 @@ This project is licensed under the **MIT License**.
 
 ## 🌍 Built with ❤️ for Cape Town Tourism
 
-**Live Site:** [capetown-tourism-platform.netlify.app](https://capetown-tourism-platform.netlify.app/)
+**Live Site:** [https://capetown-tourism.netlify.app/](https://capetown-tourism.netlify.app/)
 **Repository:** [github.com/HorizonHnk/capetown-tourism-platform](https://github.com/HorizonHnk/capetown-tourism-platform)
 
 ### ⭐ Star this repo if you found it helpful!
